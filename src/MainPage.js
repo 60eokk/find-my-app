@@ -1,4 +1,4 @@
-// import './App.css';
+import './App.css';
 import React from 'react';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 
@@ -14,35 +14,43 @@ const MainPage = () => {
   return (
     <div style={styles.container}>
       <h1 style={styles.heading}>Get Notified!!</h1>
+      <div style={styles.mapContainer}>
       <MapContainer center={position} zoom={13} style={styles.map}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <Marker position={position}></Marker>
       </MapContainer>
+     </div>
     </div>
   );
 };
 
 const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100vh',
-    backgroundColor: '#f0f0f0',
-  },
-  heading: {
-    fontSize: '3rem',
-    textAlign: 'center',
-    marginBottom: '20px',
-    color: '#333',
-  },
-  map: {
-    height: '400px',
-    width: '400px',
-  },
-};
+    container: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      minHeight: '100vh',
+      padding: '20px',
+      backgroundColor: '#f0f0f0',
+    },
+    heading: {
+      fontSize: '3rem',
+      textAlign: 'center',
+      marginBottom: '20px',
+      color: '#333',
+    },
+    mapContainer: {
+      border: '2px solid #333',
+      borderRadius: '8px',
+      overflow: 'hidden',
+    },
+    map: {
+      height: '500px',
+      width: '100%',
+    },
+  };
 
 export default MainPage;

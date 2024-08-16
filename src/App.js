@@ -1,21 +1,32 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import MainPage from './MainPage';
 import SignInPage from './Signin';
 import SignUpPage from './Signup';
-// import './App.css';
+import './App.css';
 
+
+// nav, link, route: nav is used to group "link components", 
+// link is from react-router-dom, and it navigates between different routes without reloading full page
+// and route is also from react-router-dom, defining path b/w URL path and React component
 const App = () => {
   return (
     <Router>
       <div className="app-container">
+        {/* Main Page shown by default */}
+        <MainPage />
+        
+        {/* Navigation buttons */}
         <nav style={styles.nav}>
           <Link to="/signin" style={styles.link}>Sign In</Link>
           <Link to="/signup" style={styles.link}>Sign Up</Link>
         </nav>
-        <Route path="/MainPage" component={MainPage} />
-        <Route path="/signin" component={SignInPage} />
-        <Route path="/signup" component={SignUpPage} />
+        
+        {/* Routes for Sign In and Sign Up pages */}
+        <Routes>
+          <Route path="/signin" element={<SignInPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+        </Routes>
       </div>
     </Router>
   );
