@@ -1,9 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
 import MainPage from './MainPage';
-import Signin from './Signin';
-import Signup from './Signup';
-import './App.css';
+import SignInPage from './Signin';
+import SignUpPage from './Signup';
+// import './App.css';
 
 const App = () => {
   return (
@@ -13,9 +13,9 @@ const App = () => {
           <Link to="/signin" style={styles.link}>Sign In</Link>
           <Link to="/signup" style={styles.link}>Sign Up</Link>
         </nav>
-        <Route path="/" exact component={MainPage} />
-        <Route path="/signin" component={Signin} />
-        <Route path="/signup" component={Signup} />
+        <Route path="/MainPage" component={MainPage} />
+        <Route path="/signin" component={SignInPage} />
+        <Route path="/signup" component={SignUpPage} />
       </div>
     </Router>
   );
