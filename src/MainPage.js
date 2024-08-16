@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 
 const MainPage = () => {
   const [position, setPosition] = React.useState([50,5]);
+  const MapboxToken = "pk.eyJ1IjoiNjBlb2trIiwiYSI6ImNseng0bHNpaDBvN3gyaW9sYTJrdGpjaHoifQ.7MEQ9mx2C8gXM2BQvCKOOg";
 
   React.useEffect(() => {
     navigator.geolocation.getCurrentPosition((pos) => {
@@ -11,18 +12,21 @@ const MainPage = () => {
     });
   }, []);
 
-  return (
+
+   // 
+  return ( 
     <div style={styles.container}>
       <h1 style={styles.heading}>Get Notified!!</h1>
       <div style={styles.mapContainer}>
-      <MapContainer center={position} zoom={13} style={styles.map}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Marker position={position}></Marker>
-      </MapContainer>
-     </div>
-    </div>
+      <MapContainer center={position} zoom={13} style={styles.map}> 
+      <TileLayer
+            url={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MapboxToken}`}
+            maxZoom={18}
+          />
+        <Marker position={position}></Marker> 
+      </MapContainer> 
+     </div> 
+    </div> // Missing tiles were checked by Inspect -> Network to see if there were any 429(too many requests), 503(service unavailable) responses
   );
 };
 
