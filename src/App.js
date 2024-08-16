@@ -6,6 +6,13 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 
 function App() {
   const [position, setPosition] = React.useState([50, 5]);
+  
+  React.useEffect(() => {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      setPosition([pos.coords.latitude, pos.coords.longitude]);
+    });
+  }, []);
+  
   return (
     <div className="container">
       <h1 className="heading">Get Notified!!</h1>
