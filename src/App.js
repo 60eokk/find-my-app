@@ -13,17 +13,16 @@ const App = () => {
   return (
     <Router>
       <div className="app-container">
-        {/* Main Page shown by default */}
-        <MainPage />
-        
-        {/* Navigation buttons */}
+        {/* Navigation Bar */}
         <nav style={styles.nav}>
+          <Link to="/" style={styles.link}>Home</Link>
           <Link to="/signin" style={styles.link}>Sign In</Link>
           <Link to="/signup" style={styles.link}>Sign Up</Link>
         </nav>
         
         {/* Routes for Sign In and Sign Up pages */}
         <Routes>
+          <Route path="/" element={<MainPage/>}/>
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/signup" element={<SignUpPage />} />
         </Routes>
