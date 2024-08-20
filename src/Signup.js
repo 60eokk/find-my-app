@@ -1,27 +1,43 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { auth } from './firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
-const SignUpPage = () => {
+const Signup = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      // Handle successful signup (e.g., redirect to main page)
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
   return (
-    <div style={styles.container}>
+    <div>
       <h2>Sign Up</h2>
-      <form>
-        <input type="text" placeholder="Username" />
-        <input type="password" placeholder="Password" />
-        <input type="email" placeholder="Email" />
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
         <button type="submit">Sign Up</button>
       </form>
+      {error && <p>{error}</p>}
     </div>
   );
-};
-
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100vh',
-  },
 };
 
 export default SignUpPage;

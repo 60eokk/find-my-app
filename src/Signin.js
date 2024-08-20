@@ -1,26 +1,43 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { auth } from './firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
-const SignInPage = () => {
+const Signin = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // Handle successful sign-in (e.g., redirect to main page)
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
   return (
-    <div style={styles.container}>
+    <div>
       <h2>Sign In</h2>
-      <form>
-        <input type="text" placeholder="Username" />
-        <input type="password" placeholder="Password" />
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
         <button type="submit">Sign In</button>
       </form>
+      {error && <p>{error}</p>}
     </div>
   );
-};
-
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100vh',
-  },
 };
 
 export default SignInPage;
