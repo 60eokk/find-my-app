@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 
 const MainPage = () => {
   const [position, setPosition] = React.useState([50,5]);
-  const MapboxToken = "pk.eyJ1IjoiNjBlb2trIiwiYSI6ImNseng0bHNpaDBvN3gyaW9sYTJrdGpjaHoifQ.7MEQ9mx2C8gXM2BQvCKOOg";
+  const publicMapboxToken = "pk.eyJ1IjoiNjBlb2trIiwiYSI6ImNseng0bHNpaDBvN3gyaW9sYTJrdGpjaHoifQ.7MEQ9mx2C8gXM2BQvCKOOg";
 
   React.useEffect(() => {
     navigator.geolocation.getCurrentPosition((pos) => {
@@ -20,7 +20,7 @@ const MainPage = () => {
       <div style={styles.mapContainer}>
       <MapContainer center={position} zoom={13} style={styles.map}> 
       <TileLayer
-            url={`https://api.mapbox.com/styles/v1/60eokk/clzx53ldv007c01o1diup82dk.html?title=view&access_token=pk.eyJ1IjoiNjBlb2trIiwiYSI6ImNseng0bHNpaDBvN3gyaW9sYTJrdGpjaHoifQ.7MEQ9mx2C8gXM2BQvCKOOg&zoomwheel=true&fresh=true#12.67/41.87148/-87.64001`}
+            url={`https://api.mapbox.com/styles/v1/60eokk/clzx53ldv007c01o1diup82dk/tiles/256/{z}/{x}/{y}@2x?access_token=${publicMapboxToken}`}
             maxZoom={18}
           />
         <Marker position={position}></Marker> 
