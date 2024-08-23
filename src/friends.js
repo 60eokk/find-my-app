@@ -11,14 +11,19 @@ const Friends = () => {
 
   // real time friend list update
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      doc(db, "friends", auth.currentUser.uid), // reference back to Firestore document in "friends" collection for currently authenticated user
-      (doc) => { // callback function that runs every time document changes
-        setFriends(doc.data()?.friends || []);
-      }
-    );
+    if (auth.currentUser) {
+      const unsubscribe = onSnapshot(
+        doc(db, "friends", auth.currentUser.uid), // reference back to Firestore document in "friends" collection for currently authenticated user
+        (doc) => { // callback function that runs every time document changes
+          setFriends(doc.data()?.friends || []);
+        }
+      );
 
-    return () => unsubscribe(); // prevent memory leak
+      return () => unsubscribe(); // prevent memory leak
+      } else {
+      console.error("User is not authenticated. Redirect to Sign In page")
+      // REDIRECT TO SIGNINPAGE
+    }
   }, []);
 
   // asynchronous function that is called when user wants to add a friend
@@ -38,7 +43,7 @@ const Friends = () => {
     }
   };
 
-  
+
   return (
     <div>
       <h2>My Friends</h2>
