@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { auth } from './firebase';
+import { auth, provider } from './firebase';
 import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
-import { navigate } from 'svelte-routing';
+import { useNavigate } from 'react-router-dom';
 
 const SignUpPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,7 +19,7 @@ const SignUpPage = () => {
     }
   };
 
-  const handleGoogleSignUp = async() => {
+  const handleGoogleSignUp = async () => {
     try {
       await signInWithPopup(auth, provider);
       navigate('/');
