@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { auth } from './firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { navigate } from 'svelte-routing';
 
 const SignUpPage = () => {
   const [email, setEmail] = useState('');
@@ -16,6 +17,15 @@ const SignUpPage = () => {
       setError(error.message);
     }
   };
+
+  const handleGoogleSignUp = async() => {
+    try {
+      await signInWithPopup(auth, provider);
+      navigate('/');
+    } catch(error) {
+      setError(error.message)
+    }
+  }
 
   return (
     <div>
@@ -35,6 +45,7 @@ const SignUpPage = () => {
         />
         <button type="submit">Sign Up</button>
       </form>
+      <button onClick={handleGoogleSignUp}>Sign Up with Google</button>
       {error && <p>{error}</p>}
     </div>
   );

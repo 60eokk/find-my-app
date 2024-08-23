@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { auth } from './firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 
 const SignInPage = () => {
@@ -18,6 +18,15 @@ const SignInPage = () => {
       setError(error.message);
     }
   };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithPopup(auth, provider);
+      navigate('/');
+    } catch(error) {
+      setError(error.message)
+    }
+  }
 
   return (
     <div>
@@ -37,6 +46,7 @@ const SignInPage = () => {
         />
         <button type="submit">Sign In</button>
       </form>
+      <button onClick={handleGoogleSignIn}>Sign In with Google </button>
       {error && <p>{error}</p>}
     </div>
   );
