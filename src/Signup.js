@@ -11,7 +11,7 @@ const SignUpPage = () => {
     e.preventDefault();
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      // Handle successful signup (e.g., redirect to main page)
+      // Redirect to the main page or display success message
     } catch (error) {
       setError(error.message);
     }

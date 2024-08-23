@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { auth } from './firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 
 const SignInPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Handle successful sign-in (e.g., redirect to main page)
+      navigate('/'); // Redirect to the main page after successful sign in
     } catch (error) {
       setError(error.message);
     }
