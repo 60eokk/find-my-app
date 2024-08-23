@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import MainPage from './MainPage';
 import SignInPage from './Signin';
 import SignUpPage from './Signup';
+import Friends from './friends';
 import './App.css';
 
 
@@ -18,6 +19,7 @@ const App = () => {
           <Link to="/" style={styles.link}>Home</Link>
           <Link to="/signin" style={styles.link}>Sign In</Link>
           <Link to="/signup" style={styles.link}>Sign Up</Link>
+          <Link to="/friends" style={styles.link}> Friends</Link>
         </nav>
         
         {/* Routes for Sign In and Sign Up pages */}
@@ -25,6 +27,7 @@ const App = () => {
           <Route path="/" element={<MainPage/>}/>
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path='/friends' element={<Friends />} />
         </Routes>
       </div>
     </Router>
