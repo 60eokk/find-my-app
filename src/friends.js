@@ -3,11 +3,12 @@ import React, { useState, useEffect } from 'react';
 // useEffect: perform side features (ex: fetching data when component loads) 
 import { db, auth } from './firebase';
 import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore'; // imported from Firebase Firestore SDK
-
+import { useNavigate } from 'react-router-dom';
 
 const Friends = () => {
   const [friends, setFriends] = useState([]); // initialized as emptry array, setFriends updates friends state
   const [email, setEmail] = useState(''); // initialized as empty string, setEmail updates email state
+  const navigate = useNavigate();
 
   // real time friend list update
   useEffect(() => {
@@ -22,9 +23,9 @@ const Friends = () => {
       return () => unsubscribe(); // prevent memory leak
       } else {
       console.error("User is not authenticated. Redirect to Sign In page")
-      // REDIRECT TO SIGNINPAGE
+      navigate("/signin"); // Redirect to Sign In page
     }
-  }, []);
+  }, [navigate]);
 
   // asynchronous function that is called when user wants to add a friend
   const addFriend = async () => {
