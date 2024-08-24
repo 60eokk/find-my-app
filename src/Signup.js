@@ -48,7 +48,7 @@ const SignUpPage = () => {
       </form>
       <button onClick={handleGoogleSignUp}>Sign Up with Google</button>
       {error && <p>{error}</p>}
-    </div>
+    </div>      
   );
 };
 
