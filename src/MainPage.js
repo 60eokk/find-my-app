@@ -26,7 +26,7 @@ const MainPage = () => {
         {position && (
           <MapContainer center={position} zoom={13} style={styles.map}>
             <TileLayer
-              url={`https://api.mapbox.com/styles/v1/60eokk/clzx53ldv007c01o1diup82dk/tiles/256/{z}/{x}/{y}@2x?access_token=${MapboxToken}`}
+              url={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MapboxToken}`}
               maxZoom={18}
             />
             <Marker position={position}></Marker>
