@@ -37,6 +37,7 @@ const MainPage = () => {
   );
 };
 
+
 const styles = {
   container: {
     display: 'flex',
@@ -57,10 +58,13 @@ const styles = {
     border: '2px solid #333',
     borderRadius: '8px',
     overflow: 'hidden',
+    width: '100%', // Ensure the container takes the full width available
+    maxWidth: '800px',
+    height: '500px', // Fix the height to prevent it from changing
   },
   map: {
-    height: '500px',
-    width: '100%',
+    height: '100%', // Make sure the map fills the entire container
+    width: '100%', // Make sure the map fills the entire container
   },
 };
 
