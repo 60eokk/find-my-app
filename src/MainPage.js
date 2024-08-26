@@ -28,6 +28,7 @@ const MainPage = () => {
             <TileLayer
               url={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MapboxToken}`}
               maxZoom={18}
+              errorTileUrl="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" // Fallback to OpenStreetMap
             />
             <Marker position={position}></Marker>
           </MapContainer>
