@@ -8,17 +8,22 @@ const MainPage = () => {
   const MapboxToken = "pk.eyJ1IjoiNjBlb2trIiwiYSI6ImNseng0bHNpaDBvN3gyaW9sYTJrdGpjaHoifQ.7MEQ9mx2C8gXM2BQvCKOOg";
 
   React.useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        console.log('Geolocation success:', pos); // log to check position is correct
-        setPosition([pos.coords.latitude, pos.coords.longitude]);
-      },
-      (error) => {
-        console.error("Geolocation error:", error);
-        // Optionally set a default position if geolocation fails
-        setPosition([50, 5]); // Default position (e.g., somewhere in Europe)
-      }
-    );
+    if (navigator.geolocation) {
+      console.log("Geolocation is supported by this browser.");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          console.log('Geolocation success:', pos.coords.latitude, pos.coords.longitude);
+          setPosition([pos.coords.latitude, pos.coords.longitude]);
+        },
+        (error) => {
+          console.error("Geolocation error:", error.message);
+          setPosition([50, 5]); // Default position (e.g., somewhere in Europe)
+        }
+      );
+    } else {
+      console.error("Geolocation is not supported by this browser.");
+      setPosition([50, 5]); // Default position if geolocation is not supported
+    }
   }, []);
 
   const customMarkerIcon = new L.Icon({
