@@ -12,12 +12,14 @@ const MainPage = () => {
       console.log("Geolocation is supported by this browser.");
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          console.log('Geolocation success:', pos.coords.latitude, pos.coords.longitude);
-          setPosition([pos.coords.latitude, pos.coords.longitude]);
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          console.log('Geolocation success:', lat, lng);
+          setPosition([lat, lng]);
         },
         (error) => {
           console.error("Geolocation error:", error.message);
-          setPosition([50, 5]); // Default position (e.g., somewhere in Europe)
+          setPosition([50, 5]); // Default position if geolocation fails
         }
       );
     } else {
