@@ -42,9 +42,12 @@ const MainPage = () => {
         {position ? (
           <MapContainer center={position} zoom={13} style={styles.map}>
             <TileLayer
-              url={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MapboxToken}`}
-              maxZoom={18}
-            />
+            url={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MapboxToken}`}
+            tileSize={512} // Tile size for Mapbox is 512
+            zoomOffset={-1} // Adjust zoom offset for 512 tiles
+            maxZoom={18}
+            attribution='&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> contributors'
+          />
             <Marker position={position} icon={customMarkerIcon}></Marker>
           </MapContainer>
         ) : (
