@@ -1,8 +1,8 @@
 import './App.css';
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
-
+import 'leaflet/dist/leaflet.css';  // Import Leaflet CSS
 const MainPage = () => {
   const [position, setPosition] = React.useState(null);
   const MapboxToken = "pk.eyJ1IjoiNjBlb2trIiwiYSI6ImNseng0bHNpaDBvN3gyaW9sYTJrdGpjaHoifQ.7MEQ9mx2C8gXM2BQvCKOOg";
@@ -17,7 +17,6 @@ const MainPage = () => {
           const lng = pos.coords.longitude;
           console.log('Geolocation success:', lat, lng);
           setPosition([lat, lng]);
-          setUserLocation([lat, lng]); // Set initial user location for the "ME!" button
         },
         (error) => {
           console.error("Geolocation error:", error.message);
@@ -33,9 +32,15 @@ const MainPage = () => {
   const customMarkerIcon = new L.Icon({
     iconUrl: require('./mapcursor.png'),
     iconSize: [32, 32],
-    iconAnchor: [16, 32], // Point of the icon which will correspond to marker's location
-    popupAnchor: [0, -32], // Point from which the popup should open relative to the iconAnchor
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
   });
+
+  const handleMeButtonClick = useCallback(() => {
+    if (position) {
+      setPosition([...position]); // Trigger a re-render
+    }
+  }, [position]);
 
   return (
     <div style={styles.container}>
@@ -45,34 +50,35 @@ const MainPage = () => {
           <MapContainer center={position} zoom={13} style={styles.map}>
             <TileLayer
               url={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MapboxToken}`}
-              tileSize={512} // Tile size for Mapbox is 512
-              zoomOffset={-1} // Adjust zoom offset for 512 tiles
+              tileSize={512}
+              zoomOffset={-1}
               maxZoom={18}
               attribution='&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> contributors'
             />
-            {position && <Marker position={position} icon={customMarkerIcon}></Marker>}
-            <ChangeView position={userLocation} /> {/* Use userLocation to update map view */}
+            <Marker position={position} icon={customMarkerIcon} />
+            <MapResetButton position={position} />
           </MapContainer>
         ) : (
           <p>Loading map...</p>
         )}
       </div>
-      <button onClick={() => setUserLocation(position)} style={styles.button}>ME!</button> {/* "ME!" button */}
+      <button onClick={handleMeButtonClick} style={styles.button}>ME!</button>
     </div>
   );
 };
 
 
+// Component that handles the logic for re-centering the map when "ME!" is clicked
+const MapResetButton = ({ position }) => {
+  const map = useMap();
 
-// Custom hook to update the map view when the user clicks "ME!"
-const ChangeView = ({ position }) => {
-  const map = useMap(); // Hook to access the map instance
-  React.useEffect(() => {
+  useEffect(() => {
     if (position) {
-      map.setView(position, 13); // Center map to position with zoom level 13
+      map.setView(position, 13);
     }
-  }, [position, map]);
-  return null;
+  }, [map, position]);
+
+  return null; // This component doesn't render anything
 };
 
 
