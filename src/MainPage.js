@@ -34,7 +34,7 @@ const MainPage = () => {
     iconUrl: require('./mapcursor.png'),
     iconSize: [32, 32],
     iconAnchor: [16, 32], // Point of the icon which will correspond to marker's location
-    popupAnchor: [0, -32] // Point from which the popup should open relative to the iconAnchor
+    popupAnchor: [0, -32], // Point from which the popup should open relative to the iconAnchor
   });
 
   return (
@@ -50,7 +50,7 @@ const MainPage = () => {
               maxZoom={18}
               attribution='&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> contributors'
             />
-            <Marker position={position} icon={customMarkerIcon}></Marker>
+            {position && <Marker position={position} icon={customMarkerIcon}></Marker>}
             <ChangeView position={userLocation} /> {/* Use userLocation to update map view */}
           </MapContainer>
         ) : (
