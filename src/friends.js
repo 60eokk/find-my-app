@@ -1,37 +1,45 @@
 import React, { useState, useEffect } from 'react';
-// useState: manage state within component
-// useEffect: perform side features (ex: fetching data when component loads) 
 import { db, auth } from './firebase';
-import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore'; // imported from Firebase Firestore SDK
+import { doc, setDoc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
-const Friends = () => {
-  const [friends, setFriends] = useState([]); // initialized as emptry array, setFriends updates friends state
-  const [email, setEmail] = useState(''); // initialized as empty string, setEmail updates email state
+const Friends = ({ onFriendLocationsUpdate }) => {
+  const [friends, setFriends] = useState([]);
+  const [email, setEmail] = useState('');
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // track if the user is authenticated
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // real time friend list update
   useEffect(() => {
     if (auth.currentUser) {
       setIsAuthenticated(true);
       const unsubscribe = onSnapshot(
-        doc(db, "friends", auth.currentUser.uid), // reference back to Firestore document in "friends" collection for currently authenticated user
-        (doc) => { // callback function that runs every time document changes
-          setFriends(doc.data()?.friends || []);
+        doc(db, "friends", auth.currentUser.uid),
+        (doc) => {
+          const friendsData = doc.data()?.friends || [];
+          setFriends(friendsData);
+          updateFriendLocations(friendsData);
         }
       );
 
-      return () => unsubscribe(); // prevent memory leak
-      } else {
-      console.error("User is not authenticated. Redirect to Sign In page")
+      return () => unsubscribe();
+    } else {
       setIsAuthenticated(false);
     }
   }, [navigate]);
 
+  const updateFriendLocations = async (friendsList) => {
+    const locations = await Promise.all(
+      friendsList.map(async (friendEmail) => {
+        const userDoc = await getDoc(doc(db, "users", friendEmail));
+        return {
+          email: friendEmail,
+          location: userDoc.data()?.location || null
+        };
+      })
+    );
+    onFriendLocationsUpdate(locations);
+  };
 
-
-  // asynchronous function that is called when user wants to add a friend
   const addFriend = async () => {
     if (!auth.currentUser) {
       console.error("User is not authenticated. Cannot add friends.");
@@ -48,15 +56,24 @@ const Friends = () => {
         },
         { merge: true }
       );
+      setEmail('');
     } else {
       console.error("Friend not found!");
     }
   };
 
-  const handleSignInClick = () => {
-    navigate("/signin"); // Navigate to the sign-in page
+  const updateUserLocation = async (latitude, longitude) => {
+    if (auth.currentUser) {
+      const userRef = doc(db, "users", auth.currentUser.email);
+      await updateDoc(userRef, {
+        location: { latitude, longitude }
+      });
+    }
   };
 
+  const handleSignInClick = () => {
+    navigate("/signin");
+  };
 
   return (
     <div>
@@ -75,6 +92,13 @@ const Friends = () => {
               <li key={friend}>{friend}</li>
             ))}
           </ul>
+          <button onClick={() => {
+            navigator.geolocation.getCurrentPosition(
+              (position) => updateUserLocation(position.coords.latitude, position.coords.longitude)
+            );
+          }}>
+            Update My Location
+          </button>
         </div>
       ) : (
         <div>
