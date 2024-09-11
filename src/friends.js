@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase';
 import { doc, setDoc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 
 const Friends = ({ onFriendLocationsUpdate }) => {
   const [friends, setFriends] = useState([]);
