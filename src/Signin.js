@@ -13,7 +13,7 @@ const SignInPage = () => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/'); // Redirect to the main page after successful sign in
+      navigate('/');
     } catch (error) {
       setError(error.message);
     }
@@ -24,9 +24,9 @@ const SignInPage = () => {
       await signInWithPopup(auth, provider);
       navigate('/');
     } catch(error) {
-      setError(error.message)
+      setError(error.message);
     }
-  }
+  };
 
   return (
     <div>
@@ -46,7 +46,7 @@ const SignInPage = () => {
         />
         <button type="submit">Sign In</button>
       </form>
-      <button onClick={handleGoogleSignIn}>Sign In with Google </button>
+      <button onClick={handleGoogleSignIn}>Sign In with Google</button>
       {error && <p>{error}</p>}
     </div>
   );
