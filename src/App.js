@@ -7,6 +7,7 @@ import Friends from './friends';
 import './App.css';
 
 
+
 // nav, link, route: nav is used to group "link components", 
 // link is from react-router-dom, and it navigates between different routes without reloading full page
 // and route is also from react-router-dom, defining path b/w URL path and React component
