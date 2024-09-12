@@ -1,36 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth } from './firebase';
+import { db } from './firebase';
 import { doc, setDoc, getDoc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import { updateUserLocation } from './locationService';
 
-const Friends = ({ onFriendLocationsUpdate }) => {
+const Friends = ({ user, onFriendLocationsUpdate }) => {
   const [friends, setFriends] = useState([]);
   const [email, setEmail] = useState('');
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      if (user) {
-        setIsAuthenticated(true);
-        const friendsUnsubscribe = onSnapshot(
-          doc(db, "friends", user.uid),
-          (doc) => {
-            const friendsData = doc.data()?.friends || [];
-            setFriends(friendsData);
-            updateFriendLocations(friendsData);
-          }
-        );
-        return () => friendsUnsubscribe();
-      } else {
-        setIsAuthenticated(false);
-        setFriends([]);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
+    if (user) {
+      const unsubscribe = onSnapshot(
+        doc(db, "friends", user.uid),
+        (doc) => {
+          const friendsData = doc.data()?.friends || [];
+          setFriends(friendsData);
+          updateFriendLocations(friendsData);
+        }
+      );
+      return () => unsubscribe();
+    } else {
+      setFriends([]);
+    }
+  }, [user]);
 
   const updateFriendLocations = async (friendsList) => {
     const locations = await Promise.all(
@@ -46,7 +40,7 @@ const Friends = ({ onFriendLocationsUpdate }) => {
   };
 
   const addFriend = async () => {
-    if (!auth.currentUser) {
+    if (!user) {
       setError("User is not authenticated. Cannot add friends.");
       return;
     }
@@ -55,7 +49,11 @@ const Friends = ({ onFriendLocationsUpdate }) => {
       const friendDoc = await getDoc(doc(db, "users", email));
       if (friendDoc.exists()) {
         const friendId = friendDoc.id;
-        const userFriendsRef = doc(db, "friends", auth.currentUser.uid);
+        if (friendId === user.uid) {
+          setError("You can't add yourself as a friend.");
+          return;
+        }
+        const userFriendsRef = doc(db, "friends", user.uid);
         await updateDoc(userFriendsRef, {
           friends: arrayUnion(friendId)
         });
@@ -63,7 +61,7 @@ const Friends = ({ onFriendLocationsUpdate }) => {
         // Add current user to friend's friend list
         const friendFriendsRef = doc(db, "friends", friendId);
         await updateDoc(friendFriendsRef, {
-          friends: arrayUnion(auth.currentUser.uid)
+          friends: arrayUnion(user.uid)
         });
 
         setEmail('');
@@ -76,51 +74,41 @@ const Friends = ({ onFriendLocationsUpdate }) => {
     }
   };
 
-  const updateUserLocation = async (latitude, longitude) => {
-    if (auth.currentUser) {
-      const userRef = doc(db, "users", auth.currentUser.uid);
-      await updateDoc(userRef, {
-        location: { latitude, longitude }
-      });
+  const handleUpdateLocation = () => {
+    if (user) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => updateUserLocation(user.uid, position.coords.latitude, position.coords.longitude),
+        (err) => setError("Error getting location: " + err.message)
+      );
     }
   };
 
-  const handleSignInClick = () => {
-    navigate("/signin");
-  };
+  if (!user) {
+    return (
+      <div>
+        <h2>You are not signed in. Sign in to use this feature!</h2>
+        <button onClick={() => navigate("/signin")}>Sign In</button>
+      </div>
+    );
+  }
 
   return (
     <div>
-      {isAuthenticated ? (
-        <div>
-          <h2>My Friends</h2>
-          <input
-            type="email"
-            placeholder="Friend's Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <button onClick={addFriend}>Add Friend</button>
-          {error && <p style={{color: 'red'}}>{error}</p>}
-          <ul>
-            {friends.map((friendId) => (
-              <li key={friendId}>{friendId}</li>
-            ))}
-          </ul>
-          <button onClick={() => {
-            navigator.geolocation.getCurrentPosition(
-              (position) => updateUserLocation(position.coords.latitude, position.coords.longitude)
-            );
-          }}>
-            Update My Location
-          </button>
-        </div>
-      ) : (
-        <div>
-          <h2>You are not signed in. Sign in to use this feature!</h2>
-          <button onClick={handleSignInClick}>Sign In</button>
-        </div>
-      )}
+      <h2>My Friends</h2>
+      <input
+        type="email"
+        placeholder="Friend's Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <button onClick={addFriend}>Add Friend</button>
+      {error && <p style={{color: 'red'}}>{error}</p>}
+      <ul>
+        {friends.map((friendId) => (
+          <li key={friendId}>{friendId}</li>
+        ))}
+      </ul>
+      <button onClick={handleUpdateLocation}>Update My Location</button>
     </div>
   );
 };
