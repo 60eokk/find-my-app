@@ -105,16 +105,16 @@ const MainPage = ({ user }) => {
             />
             <Marker position={position} icon={customMarkerIcon} />
             {friendLocations.map((friend, index) => 
-              friend.location && (
-                <Marker 
-                  key={index} 
-                  position={[friend.location.latitude, friend.location.longitude]}
-                  icon={customMarkerIcon}
-                >
-                  <Popup>{friend.email}</Popup>
-                </Marker>
-              )
-            )}
+            friend.location && (
+              <Marker 
+                key={index} 
+                position={[friend.location.latitude, friend.location.longitude]}
+                icon={customMarkerIcon}
+              >
+                <Popup>{friend.email}</Popup>
+              </Marker>
+            )
+          )}
             <MapResetButton position={position} />
           </MapContainer>
         ) : (
