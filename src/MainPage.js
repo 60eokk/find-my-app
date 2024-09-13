@@ -2,14 +2,14 @@ import './App.css';
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';  // Import Leaflet CSS
-import Friends from './Friends'; // Make sure to import the Friends component
-import { updateUserLocation } from './locationService'; // Import from your locationService file
+import 'leaflet/dist/leaflet.css';
+import Friends from './Friends';
+import { updateUserLocation } from './locationService';
 
 const MainPage = ({ user }) => {
   const [position, setPosition] = useState(null);
   const [friendLocations, setFriendLocations] = useState([]);
-  const [alertDistance, setAlertDistance] = useState(5); // Default alert distance in miles
+  const [alertDistance, setAlertDistance] = useState(5);
   const MapboxToken = "pk.eyJ1IjoiNjBlb2trIiwiYSI6ImNseng0bHNpaDBvN3gyaW9sYTJrdGpjaHoifQ.7MEQ9mx2C8gXM2BQvCKOOg";
 
   useEffect(() => {
@@ -28,16 +28,16 @@ const MainPage = ({ user }) => {
         },
         (error) => {
           console.error("Geolocation error:", error.message);
-          setPosition([50, 5]); // Default position if geolocation fails
+          setPosition([50, 5]);
         },
         { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
       );
       return () => navigator.geolocation.clearWatch(watchId);
     } else {
       console.error("Geolocation is not supported by this browser.");
-      setPosition([50, 5]); // Default position if geolocation is not supported
+      setPosition([50, 5]);
     }
-  }, [user, friendLocations]);
+  }, [user]);
 
   const customMarkerIcon = new L.Icon({
     iconUrl: require('./mapcursor.png'),
@@ -46,9 +46,16 @@ const MainPage = ({ user }) => {
     popupAnchor: [0, -32],
   });
 
+  const friendMarkerIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+  });
+
   const handleMeButtonClick = useCallback(() => {
     if (position) {
-      setPosition([...position]); // Trigger a re-render
+      setPosition([...position]);
     }
   }, [position]);
 
@@ -61,8 +68,7 @@ const MainPage = ({ user }) => {
       Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
       Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const d = R * c; // Distance in miles
-    return d;
+    return R * c; // Distance in miles
   };
 
   const deg2rad = (deg) => {
@@ -83,12 +89,12 @@ const MainPage = ({ user }) => {
     });
   };
 
-  const handleFriendLocationsUpdate = (locations) => {
+  const handleFriendLocationsUpdate = useCallback((locations) => {
     setFriendLocations(locations);
     if (position) {
       checkProximity(position, locations);
     }
-  };
+  }, [position, alertDistance]);
 
   return (
     <div style={styles.container}>
@@ -103,18 +109,20 @@ const MainPage = ({ user }) => {
               maxZoom={18}
               attribution='&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> contributors'
             />
-            <Marker position={position} icon={customMarkerIcon} />
+            <Marker position={position} icon={customMarkerIcon}>
+              <Popup>You are here</Popup>
+            </Marker>
             {friendLocations.map((friend, index) => 
-            friend.location && (
-              <Marker 
-                key={index} 
-                position={[friend.location.latitude, friend.location.longitude]}
-                icon={customMarkerIcon}
-              >
-                <Popup>{friend.email}</Popup>
-              </Marker>
-            )
-          )}
+              friend.location && (
+                <Marker 
+                  key={index} 
+                  position={[friend.location.latitude, friend.location.longitude]}
+                  icon={friendMarkerIcon}
+                >
+                  <Popup>{friend.email}</Popup>
+                </Marker>
+              )
+            )}
             <MapResetButton position={position} />
           </MapContainer>
         ) : (
@@ -138,7 +146,6 @@ const MainPage = ({ user }) => {
   );
 };
 
-// Component that handles the logic for re-centering the map when "ME!" is clicked
 const MapResetButton = ({ position }) => {
   const map = useMap();
   useEffect(() => {
@@ -146,7 +153,7 @@ const MapResetButton = ({ position }) => {
       map.setView(position, 13);
     }
   }, [map, position]);
-  return null; // This component doesn't render anything
+  return null;
 };
 
 const styles = {
