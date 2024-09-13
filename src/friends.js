@@ -85,32 +85,120 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
 
   if (!user) {
     return (
-      <div>
-        <h2>You are not signed in. Sign in to use this feature!</h2>
-        <button onClick={() => navigate("/signin")}>Sign In</button>
+      <div style={styles.container}>
+        <h2 style={styles.title}>You are not signed in. Sign in to use this feature!</h2>
+        <button onClick={() => navigate("/signin")} style={styles.button}>Sign In</button>
       </div>
     );
   }
 
   return (
-    <div>
-      <h2>My Friends</h2>
-      <input
-        type="email"
-        placeholder="Friend's Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <button onClick={addFriend}>Add Friend</button>
-      {error && <p style={{color: 'red'}}>{error}</p>}
-      <ul>
-        {friends.map((friendId) => (
-          <li key={friendId}>{friendId}</li>
-        ))}
-      </ul>
-      <button onClick={handleUpdateLocation}>Update My Location</button>
+    <div style={styles.container}>
+      <h2 style={styles.title}>My Friends</h2>
+      <div style={styles.addFriendContainer}>
+        <input
+          type="email"
+          placeholder="Friend's Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={styles.input}
+        />
+        <button onClick={addFriend} style={styles.button}>Add Friend</button>
+      </div>
+      {error && <p style={styles.error}>{error}</p>}
+      <div style={styles.friendListContainer}>
+        <h3 style={styles.subtitle}>Friend List</h3>
+        {friends.length === 0 ? (
+          <p style={styles.noFriends}>You haven't added any friends yet.</p>
+        ) : (
+          <ul style={styles.friendList}>
+            {friends.map((friendId) => (
+              <li key={friendId} style={styles.friendItem}>{friendId}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <button onClick={handleUpdateLocation} style={styles.updateLocationButton}>
+        Update My Location
+      </button>
     </div>
   );
+};
+
+const styles = {
+  container: {
+    maxWidth: '600px',
+    margin: '0 auto',
+    padding: '20px',
+    backgroundColor: '#f0f2f5',
+    borderRadius: '8px',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+  },
+  title: {
+    fontSize: '24px',
+    color: '#1877f2',
+    marginBottom: '20px',
+    textAlign: 'center',
+  },
+  addFriendContainer: {
+    display: 'flex',
+    marginBottom: '20px',
+  },
+  input: {
+    flex: 1,
+    padding: '10px',
+    fontSize: '16px',
+    borderRadius: '4px',
+    border: '1px solid #ddd',
+    marginRight: '10px',
+  },
+  button: {
+    padding: '10px 20px',
+    fontSize: '16px',
+    color: 'white',
+    backgroundColor: '#1877f2',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+  },
+  error: {
+    color: 'red',
+    marginBottom: '10px',
+  },
+  friendListContainer: {
+    backgroundColor: 'white',
+    borderRadius: '4px',
+    padding: '15px',
+    marginBottom: '20px',
+  },
+  subtitle: {
+    fontSize: '18px',
+    color: '#444',
+    marginBottom: '10px',
+  },
+  noFriends: {
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  friendList: {
+    listStyle: 'none',
+    padding: 0,
+  },
+  friendItem: {
+    padding: '10px',
+    borderBottom: '1px solid #eee',
+    color: '#333',
+  },
+  updateLocationButton: {
+    width: '100%',
+    padding: '10px',
+    fontSize: '16px',
+    color: 'white',
+    backgroundColor: '#42b72a',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+  },
 };
 
 export default Friends;
