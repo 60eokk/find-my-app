@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
-import { doc, setDoc, getDoc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
-import { updateUserLocation } from './locationService';
 
 const Friends = ({ user, onFriendLocationsUpdate }) => {
   const [friends, setFriends] = useState([]);
@@ -74,15 +73,6 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
     }
   };
 
-  const handleUpdateLocation = () => {
-    if (user) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => updateUserLocation(user.uid, position.coords.latitude, position.coords.longitude),
-        (err) => setError("Error getting location: " + err.message)
-      );
-    }
-  };
-
   if (!user) {
     return (
       <div style={styles.container}>
@@ -118,9 +108,6 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
           </ul>
         )}
       </div>
-      <button onClick={handleUpdateLocation} style={styles.updateLocationButton}>
-        Update My Location
-      </button>
     </div>
   );
 };
