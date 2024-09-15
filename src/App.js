@@ -6,7 +6,7 @@ import MainPage from './MainPage';
 import SignInPage from './Signin';
 import SignUpPage from './Signup';
 import Friends from './Friends';
-import './App.css';
+// import './App.css';
 
 
 
