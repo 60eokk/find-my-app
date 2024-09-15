@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
-import { doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 const Friends = ({ user, onFriendLocationsUpdate }) => {
@@ -97,16 +97,16 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
       }
 
       const userFriendsRef = doc(db, "friends", user.uid);
-      await setDoc(userFriendsRef, {
-        friends: [...friends.map(f => f.id), friendId]
-      }, { merge: true });
+      await updateDoc(userFriendsRef, {
+        friends: arrayUnion(friendId)
+      });
 
       console.log("Added friend to user's list");
 
       const friendFriendsRef = doc(db, "friends", friendId);
-      await setDoc(friendFriendsRef, {
-        friends: [user.uid]
-      }, { merge: true });
+      await updateDoc(friendFriendsRef, {
+        friends: arrayUnion(user.uid)
+      });
 
       console.log("Added user to friend's list");
 
@@ -202,9 +202,6 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
     </div>
   );
 };
-
-
-
 
 const styles = {
   container: {
