@@ -1,4 +1,3 @@
-import './App.css';
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -62,11 +61,11 @@ const MainPage = ({ user }) => {
   }, []);
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.heading}>Get Notified!!</h1>
-      <div style={styles.mapContainer}>
+    <div className="flex flex-col items-center justify-start min-h-screen p-5 bg-gray-100">
+      <h1 className="text-4xl font-bold text-center mb-6 text-gray-800">Get Notified!!</h1>
+      <div className="w-full max-w-3xl h-96 border-2 border-gray-300 rounded-lg overflow-hidden mb-4">
         {position ? (
-          <MapContainer center={position} zoom={13} style={styles.map}>
+          <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }}>
             <TileLayer
               url={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MapboxToken}`}
               tileSize={512}
@@ -91,10 +90,15 @@ const MainPage = ({ user }) => {
             <MapResetButton position={position} />
           </MapContainer>
         ) : (
-          <p>Loading map...</p>
+          <p className="text-center py-4">Loading map...</p>
         )}
       </div>
-      <button onClick={handleMeButtonClick} style={styles.button}>ME!</button>
+      <button 
+        onClick={handleMeButtonClick} 
+        className="px-6 py-2 text-lg font-semibold text-white bg-blue-500 rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
+      >
+        ME!
+      </button>
       <Friends user={user} onFriendLocationsUpdate={handleFriendLocationsUpdate} userLocation={position} />
     </div>
   );
@@ -110,49 +114,4 @@ const MapResetButton = ({ position }) => {
   return null;
 };
 
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    minHeight: '100vh',
-    padding: '20px',
-    backgroundColor: '#f0f0f0',
-  },
-  heading: {
-    fontSize: '3rem',
-    textAlign: 'center',
-    marginBottom: '20px',
-    color: '#333',
-  },
-  button: {
-    padding: '10px 20px',
-    fontSize: '1.2rem',
-    marginTop: '10px',
-    cursor: 'pointer',
-    backgroundColor: '#007bff',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-  },
-  mapContainer: {
-    border: '2px solid #333',
-    borderRadius: '8px',
-    overflow: 'hidden',
-    width: '100%', // Ensure the container takes the full width available
-    maxWidth: '800px',
-    height: '500px', // Fix the height to prevent it from changing
-  },
-  map: {
-    height: '100%', // Make sure the map fills the entire container
-    width: '100%', // Make sure the map fills the entire container
-  },
-  input: {
-    margin: '10px',
-    padding: '5px',
-    fontSize: '1rem',
-  },
-};
-
-export default MainPage
+export default MainPage;
