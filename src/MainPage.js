@@ -9,7 +9,6 @@ import { updateUserLocation } from './locationService';
 const MainPage = ({ user }) => {
   const [position, setPosition] = useState(null);
   const [friendLocations, setFriendLocations] = useState([]);
-  const [alertDistance, setAlertDistance] = useState(5);
   const MapboxToken = "pk.eyJ1IjoiNjBlb2trIiwiYSI6ImNseng0bHNpaDBvN3gyaW9sYTJrdGpjaHoifQ.7MEQ9mx2C8gXM2BQvCKOOg";
 
   useEffect(() => {
@@ -23,7 +22,6 @@ const MainPage = ({ user }) => {
           setPosition([lat, lng]);
           if (user) {
             updateUserLocation(user.uid, lat, lng);
-            checkProximity([lat, lng], friendLocations);
           }
         },
         (error) => {
@@ -59,42 +57,9 @@ const MainPage = ({ user }) => {
     }
   }, [position]);
 
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 3959; // Radius of the Earth in miles
-    const dLat = deg2rad(lat2 - lat1);
-    const dLon = deg2rad(lon2 - lon1);
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c; // Distance in miles
-  };
-
-  const deg2rad = (deg) => {
-    return deg * (Math.PI/180);
-  };
-
-  const checkProximity = (userLocation, friendLocations) => {
-    friendLocations.forEach(friend => {
-      if (friend.location) {
-        const distance = calculateDistance(
-          userLocation[0], userLocation[1],
-          friend.location.latitude, friend.location.longitude
-        );
-        if (distance < alertDistance) {
-          alert(`Your friend ${friend.email} is less than ${alertDistance} miles away!`);
-        }
-      }
-    });
-  };
-
   const handleFriendLocationsUpdate = useCallback((locations) => {
     setFriendLocations(locations);
-    if (position) {
-      checkProximity(position, locations);
-    }
-  }, [position, alertDistance]);
+  }, []);
 
   return (
     <div style={styles.container}>
@@ -130,18 +95,7 @@ const MainPage = ({ user }) => {
         )}
       </div>
       <button onClick={handleMeButtonClick} style={styles.button}>ME!</button>
-      <div>
-        <label>
-          Alert Distance (miles):
-          <input 
-            type="number" 
-            value={alertDistance} 
-            onChange={(e) => setAlertDistance(Number(e.target.value))}
-            style={styles.input}
-          />
-        </label>
-      </div>
-      <Friends user={user} onFriendLocationsUpdate={handleFriendLocationsUpdate} />
+      <Friends user={user} onFriendLocationsUpdate={handleFriendLocationsUpdate} userLocation={position} />
     </div>
   );
 };
