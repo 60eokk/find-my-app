@@ -98,27 +98,36 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
       setError("User is not authenticated. Cannot add friends.");
       return;
     }
-  
+
     if (!isOnline) {
       setError("Cannot add friends while offline. Please check your internet connection.");
       return;
     }
-  
+
     if (!email) {
       setError("Please enter a friend's email.");
       return;
     }
-  
+
     setIsAddingFriend(true);
     setError(null);
     setSuccessMessage('');
-  
+
     try {
       console.log("Searching for user with email:", email);
-      
+
+      // Check if the current user's document exists
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (!userDoc.exists()) {
+        console.error("User document does not exist for UID:", user.uid);
+        setError("User profile not found. Please try logging out and in again.");
+        setIsAddingFriend(false);
+        return;
+      }
+
       // Add a small delay to allow for potential network recovery
       await new Promise(resolve => setTimeout(resolve, 1000));
-  
+
       const usersRef = collection(db, "users");
       const q = query(usersRef, where("email", "==", email.toLowerCase().trim()));
       
@@ -131,40 +140,54 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
         setIsAddingFriend(false);
         return;
       }
-  
+
       console.log("Query snapshot:", querySnapshot.size);
-  
+
       if (querySnapshot.empty) {
         setError("No user found with this email.");
         setIsAddingFriend(false);
         return;
       }
-  
+
       const friendDoc = querySnapshot.docs[0];
       const friendId = friendDoc.id;
       
       console.log("Found user:", friendId);
-  
+
       if (friendId === user.uid) {
         setError("You can't add yourself as a friend.");
         setIsAddingFriend(false);
         return;
       }
-  
+
+      // Check if the friends document exists, if not create it
       const userFriendsRef = doc(db, "friends", user.uid);
+      const userFriendsDoc = await getDoc(userFriendsRef);
+      if (!userFriendsDoc.exists()) {
+        await setDoc(userFriendsRef, { friends: [] });
+      }
+
+      // Update the user's friends list
       await updateDoc(userFriendsRef, {
         friends: arrayUnion(friendId)
       });
-  
+
       console.log("Added friend to user's list");
-  
+
+      // Check if the friend's document exists, if not create it
       const friendFriendsRef = doc(db, "friends", friendId);
+      const friendFriendsDoc = await getDoc(friendFriendsRef);
+      if (!friendFriendsDoc.exists()) {
+        await setDoc(friendFriendsRef, { friends: [] });
+      }
+
+      // Update the friend's friends list
       await updateDoc(friendFriendsRef, {
         friends: arrayUnion(user.uid)
       });
-  
+
       console.log("Added user to friend's list");
-  
+
       setEmail('');
       setSuccessMessage(`Successfully added ${email} as a friend!`);
       
