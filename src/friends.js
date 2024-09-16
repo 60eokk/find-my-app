@@ -98,61 +98,73 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
       setError("User is not authenticated. Cannot add friends.");
       return;
     }
-
+  
     if (!isOnline) {
       setError("Cannot add friends while offline. Please check your internet connection.");
       return;
     }
-
+  
     if (!email) {
       setError("Please enter a friend's email.");
       return;
     }
-
+  
     setIsAddingFriend(true);
     setError(null);
     setSuccessMessage('');
-
+  
     try {
       console.log("Searching for user with email:", email);
       
+      // Add a small delay to allow for potential network recovery
+      await new Promise(resolve => setTimeout(resolve, 1000));
+  
       const usersRef = collection(db, "users");
       const q = query(usersRef, where("email", "==", email.toLowerCase().trim()));
-      const querySnapshot = await getDocs(q);
-
+      
+      let querySnapshot;
+      try {
+        querySnapshot = await getDocs(q);
+      } catch (fetchError) {
+        console.error("Error fetching user data:", fetchError);
+        setError("Failed to fetch user data. Please check your internet connection and try again.");
+        setIsAddingFriend(false);
+        return;
+      }
+  
       console.log("Query snapshot:", querySnapshot.size);
-
+  
       if (querySnapshot.empty) {
         setError("No user found with this email.");
         setIsAddingFriend(false);
         return;
       }
-
+  
       const friendDoc = querySnapshot.docs[0];
       const friendId = friendDoc.id;
       
       console.log("Found user:", friendId);
-
+  
       if (friendId === user.uid) {
         setError("You can't add yourself as a friend.");
         setIsAddingFriend(false);
         return;
       }
-
+  
       const userFriendsRef = doc(db, "friends", user.uid);
       await updateDoc(userFriendsRef, {
         friends: arrayUnion(friendId)
       });
-
+  
       console.log("Added friend to user's list");
-
+  
       const friendFriendsRef = doc(db, "friends", friendId);
       await updateDoc(friendFriendsRef, {
         friends: arrayUnion(user.uid)
       });
-
+  
       console.log("Added user to friend's list");
-
+  
       setEmail('');
       setSuccessMessage(`Successfully added ${email} as a friend!`);
       
