@@ -170,7 +170,10 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
       
       fetchFriends();
     } catch (error) {
-      console.error("Error adding friend:", error);
+      console.error("Detailed error in addFriend:", error);
+      if (error.code) console.error("Error code:", error.code);
+      if (error.message) console.error("Error message:", error.message);
+      if (error.stack) console.error("Error stack:", error.stack);
       setError("Error adding friend. Please try again later.");
     } finally {
       setIsAddingFriend(false);
