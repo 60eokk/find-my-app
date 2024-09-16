@@ -11,27 +11,50 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [alertDistance, setAlertDistance] = useState('');
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   const updateFriendLocations = useCallback(async (friendsList) => {
-    const locations = await Promise.all(
-      friendsList.map(async (friend) => {
-        const userDoc = await getDoc(doc(db, "users", friend.id));
-        return {
-          email: friend.email,
-          location: userDoc.data()?.location || null
-        };
-      })
-    );
-    if (typeof onFriendLocationsUpdate === 'function') {
-      onFriendLocationsUpdate(locations);
-    } else {
-      console.warn('onFriendLocationsUpdate is not a function or not provided');
+    if (!isOnline) {
+      console.warn('Cannot update friend locations while offline');
+      return;
     }
-  }, [onFriendLocationsUpdate]);
+
+    try {
+      const locations = await Promise.all(
+        friendsList.map(async (friend) => {
+          const userDoc = await getDoc(doc(db, "users", friend.id));
+          return {
+            email: friend.email,
+            location: userDoc.data()?.location || null
+          };
+        })
+      );
+      if (typeof onFriendLocationsUpdate === 'function') {
+        onFriendLocationsUpdate(locations);
+      }
+    } catch (error) {
+      console.error('Error updating friend locations:', error);
+    }
+  }, [onFriendLocationsUpdate, isOnline]);
 
   const fetchFriends = useCallback(async () => {
-    if (user) {
+    if (!user || !isOnline) return;
+
+    try {
       const friendsDoc = await getDoc(doc(db, "friends", user.uid));
       const friendsData = friendsDoc.data()?.friends || [];
       const friendsWithDetails = await Promise.all(
@@ -47,22 +70,37 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
       );
       setFriends(friendsWithDetails);
       updateFriendLocations(friendsWithDetails);
+    } catch (error) {
+      console.error('Error fetching friends:', error);
+      setError('Failed to fetch friends. Please check your internet connection.');
     }
-  }, [user, updateFriendLocations]);
+  }, [user, updateFriendLocations, isOnline]);
 
   useEffect(() => {
-    if (user) {
+    if (user && isOnline) {
       fetchFriends();
-      const unsubscribe = onSnapshot(doc(db, "friends", user.uid), fetchFriends);
+      const unsubscribe = onSnapshot(
+        doc(db, "friends", user.uid),
+        fetchFriends,
+        (error) => {
+          console.error('Error in friends snapshot listener:', error);
+          setError('Failed to listen for friend updates. Please check your internet connection.');
+        }
+      );
       return () => unsubscribe();
     } else {
       setFriends([]);
     }
-  }, [user, fetchFriends]);
+  }, [user, fetchFriends, isOnline]);
 
   const addFriend = async () => {
     if (!user) {
       setError("User is not authenticated. Cannot add friends.");
+      return;
+    }
+
+    if (!isOnline) {
+      setError("Cannot add friends while offline. Please check your internet connection.");
       return;
     }
 
@@ -118,11 +156,10 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
       setEmail('');
       setSuccessMessage(`Successfully added ${email} as a friend!`);
       
-      // Refresh friends list
       fetchFriends();
     } catch (error) {
       console.error("Error adding friend:", error);
-      setError("Error adding friend: " + error.message);
+      setError("Error adding friend. Please try again later.");
     } finally {
       setIsAddingFriend(false);
     }
@@ -136,6 +173,11 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
   const handleSetAlert = async () => {
     if (!selectedFriend || !alertDistance) return;
 
+    if (!isOnline) {
+      setError("Cannot set alert while offline. Please check your internet connection.");
+      return;
+    }
+
     try {
       await setDoc(doc(db, "alerts", `${user.uid}_${selectedFriend.id}`), {
         distance: Number(alertDistance)
@@ -143,9 +185,10 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
       setSelectedFriend(null);
       setAlertDistance('');
       setSuccessMessage(`Alert set for ${selectedFriend.email} at ${alertDistance} miles.`);
-      fetchFriends(); // Refresh the friends list to update UI
+      fetchFriends();
     } catch (error) {
-      setError("Error setting alert: " + error.message);
+      console.error("Error setting alert:", error);
+      setError("Error setting alert. Please try again later.");
     }
   };
 
@@ -160,6 +203,12 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+      {!isOnline && (
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
+          <p className="font-bold">You are offline</p>
+          <p>Some features may be unavailable. Please check your internet connection.</p>
+        </div>
+      )}
       <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">My Friends</h2>
       <div className="flex mb-4">
         <input
@@ -171,7 +220,7 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
         />
         <button 
           onClick={addFriend} 
-          disabled={isAddingFriend}
+          disabled={isAddingFriend || !isOnline}
           className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-200 disabled:bg-blue-300"
         >
           {isAddingFriend ? 'Adding...' : 'Add Friend'}
@@ -204,7 +253,13 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
             onChange={(e) => setAlertDistance(e.target.value)}
             className="w-full p-2 border rounded mb-2"
           />
-          <button onClick={handleSetAlert} className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition duration-200">Set Alert</button>
+          <button 
+            onClick={handleSetAlert} 
+            disabled={!isOnline}
+            className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition duration-200 disabled:bg-green-300"
+          >
+            Set Alert
+          </button>
         </div>
       )}
     </div>
