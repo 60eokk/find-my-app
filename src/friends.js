@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from './firebase';
 import { doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
@@ -13,34 +13,7 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
   const [alertDistance, setAlertDistance] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (user) {
-      const unsubscribe = onSnapshot(
-        doc(db, "friends", user.uid),
-        async (docSnapshot) => {
-          const friendsData = docSnapshot.data()?.friends || [];
-          const friendsWithDetails = await Promise.all(
-            friendsData.map(async (friendId) => {
-              const userDoc = await getDoc(doc(db, "users", friendId));
-              const alertDoc = await getDoc(doc(db, "alerts", `${user.uid}_${friendId}`));
-              return {
-                id: friendId,
-                email: userDoc.data()?.email,
-                alertDistance: alertDoc.data()?.distance || null
-              };
-            })
-          );
-          setFriends(friendsWithDetails);
-          updateFriendLocations(friendsWithDetails);
-        }
-      );
-      return () => unsubscribe();
-    } else {
-      setFriends([]);
-    }
-  }, [user]);
-
-  const updateFriendLocations = async (friendsList) => {
+  const updateFriendLocations = useCallback(async (friendsList) => {
     const locations = await Promise.all(
       friendsList.map(async (friend) => {
         const userDoc = await getDoc(doc(db, "users", friend.id));
@@ -55,7 +28,37 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
     } else {
       console.warn('onFriendLocationsUpdate is not a function or not provided');
     }
-  };
+  }, [onFriendLocationsUpdate]);
+
+  const fetchFriends = useCallback(async () => {
+    if (user) {
+      const friendsDoc = await getDoc(doc(db, "friends", user.uid));
+      const friendsData = friendsDoc.data()?.friends || [];
+      const friendsWithDetails = await Promise.all(
+        friendsData.map(async (friendId) => {
+          const userDoc = await getDoc(doc(db, "users", friendId));
+          const alertDoc = await getDoc(doc(db, "alerts", `${user.uid}_${friendId}`));
+          return {
+            id: friendId,
+            email: userDoc.data()?.email,
+            alertDistance: alertDoc.data()?.distance || null
+          };
+        })
+      );
+      setFriends(friendsWithDetails);
+      updateFriendLocations(friendsWithDetails);
+    }
+  }, [user, updateFriendLocations]);
+
+  useEffect(() => {
+    if (user) {
+      fetchFriends();
+      const unsubscribe = onSnapshot(doc(db, "friends", user.uid), fetchFriends);
+      return () => unsubscribe();
+    } else {
+      setFriends([]);
+    }
+  }, [user, fetchFriends]);
 
   const addFriend = async () => {
     if (!user) {
@@ -76,8 +79,10 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
       console.log("Searching for user with email:", email);
       
       const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
+      const q = query(usersRef, where("email", "==", email.toLowerCase().trim()));
       const querySnapshot = await getDocs(q);
+
+      console.log("Query snapshot:", querySnapshot.size);
 
       if (querySnapshot.empty) {
         setError("No user found with this email.");
@@ -113,6 +118,8 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
       setEmail('');
       setSuccessMessage(`Successfully added ${email} as a friend!`);
       
+      // Refresh friends list
+      fetchFriends();
     } catch (error) {
       console.error("Error adding friend:", error);
       setError("Error adding friend: " + error.message);
@@ -136,6 +143,7 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
       setSelectedFriend(null);
       setAlertDistance('');
       setSuccessMessage(`Alert set for ${selectedFriend.email} at ${alertDistance} miles.`);
+      fetchFriends(); // Refresh the friends list to update UI
     } catch (error) {
       setError("Error setting alert: " + error.message);
     }
@@ -143,151 +151,64 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
 
   if (!user) {
     return (
-      <div style={styles.container}>
-        <h2 style={styles.title}>You are not signed in. Sign in to use this feature!</h2>
-        <button onClick={() => navigate("/signin")} style={styles.button}>Sign In</button>
+      <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">You are not signed in. Sign in to use this feature!</h2>
+        <button onClick={() => navigate("/signin")} className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-200">Sign In</button>
       </div>
     );
   }
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.title}>My Friends</h2>
-      <div style={styles.addFriendContainer}>
+    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">My Friends</h2>
+      <div className="flex mb-4">
         <input
           type="email"
           placeholder="Friend's Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          style={styles.input}
+          className="flex-grow mr-2 p-2 border rounded"
         />
         <button 
           onClick={addFriend} 
-          style={styles.button}
           disabled={isAddingFriend}
+          className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-200 disabled:bg-blue-300"
         >
           {isAddingFriend ? 'Adding...' : 'Add Friend'}
         </button>
       </div>
-      {error && <p style={styles.error}>{error}</p>}
-      {successMessage && <p style={styles.success}>{successMessage}</p>}
-      <div style={styles.friendListContainer}>
-        <h3 style={styles.subtitle}>Friend List</h3>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+      {successMessage && <p className="text-green-500 mb-4">{successMessage}</p>}
+      <div className="bg-gray-100 p-4 rounded-lg mb-4">
+        <h3 className="text-lg font-semibold mb-2">Friend List</h3>
         {friends.length === 0 ? (
-          <p style={styles.noFriends}>You haven't added any friends yet.</p>
+          <p className="text-gray-600 italic">You haven't added any friends yet.</p>
         ) : (
-          <ul style={styles.friendList}>
+          <ul>
             {friends.map((friend) => (
-              <li key={friend.id} style={styles.friendItem} onClick={() => handleFriendClick(friend)}>
-                {friend.email} 
-                {friend.alertDistance && <span style={styles.alertBadge}>{friend.alertDistance} miles</span>}
+              <li key={friend.id} className="flex justify-between items-center py-2 border-b last:border-b-0" onClick={() => handleFriendClick(friend)}>
+                <span>{friend.email}</span>
+                {friend.alertDistance && <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">{friend.alertDistance} miles</span>}
               </li>
             ))}
           </ul>
         )}
       </div>
       {selectedFriend && (
-        <div style={styles.alertContainer}>
-          <h4>Set Alert for {selectedFriend.email}</h4>
+        <div className="bg-gray-100 p-4 rounded-lg">
+          <h4 className="font-semibold mb-2">Set Alert for {selectedFriend.email}</h4>
           <input
             type="number"
             placeholder="Alert distance (miles)"
             value={alertDistance}
             onChange={(e) => setAlertDistance(e.target.value)}
-            style={styles.input}
+            className="w-full p-2 border rounded mb-2"
           />
-          <button onClick={handleSetAlert} style={styles.button}>Set Alert</button>
+          <button onClick={handleSetAlert} className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition duration-200">Set Alert</button>
         </div>
       )}
     </div>
   );
-};
-
-const styles = {
-  container: {
-    maxWidth: '600px',
-    margin: '0 auto',
-    padding: '20px',
-    backgroundColor: '#f0f2f5',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-  },
-  title: {
-    fontSize: '24px',
-    color: '#1877f2',
-    marginBottom: '20px',
-    textAlign: 'center',
-  },
-  addFriendContainer: {
-    display: 'flex',
-    marginBottom: '20px',
-  },
-  input: {
-    flex: 1,
-    padding: '10px',
-    fontSize: '16px',
-    borderRadius: '4px',
-    border: '1px solid #ddd',
-    marginRight: '10px',
-  },
-  button: {
-    padding: '10px 20px',
-    fontSize: '16px',
-    color: 'white',
-    backgroundColor: '#1877f2',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-  },
-  error: {
-    color: 'red',
-    marginBottom: '10px',
-  },
-  success: {
-    color: 'green',
-    marginBottom: '10px',
-  },
-  friendListContainer: {
-    backgroundColor: 'white',
-    borderRadius: '4px',
-    padding: '15px',
-    marginBottom: '20px',
-  },
-  subtitle: {
-    fontSize: '18px',
-    color: '#444',
-    marginBottom: '10px',
-  },
-  noFriends: {
-    color: '#666',
-    fontStyle: 'italic',
-  },
-  friendList: {
-    listStyle: 'none',
-    padding: 0,
-  },
-  friendItem: {
-    padding: '10px',
-    borderBottom: '1px solid #eee',
-    color: '#333',
-    cursor: 'pointer',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  alertBadge: {
-    backgroundColor: '#e7f3ff',
-    color: '#1877f2',
-    padding: '2px 6px',
-    borderRadius: '10px',
-    fontSize: '0.8em',
-  },
-  alertContainer: {
-    marginTop: '20px',
-    padding: '15px',
-    backgroundColor: '#f7f7f7',
-    borderRadius: '4px',
-  },
 };
 
 export default Friends;
