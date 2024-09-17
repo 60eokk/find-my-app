@@ -6,13 +6,19 @@ import MainPage from './MainPage';
 import SignInPage from './Signin';
 import SignUpPage from './Signup';
 import Friends from './Friends';
+import { ensureUserDocument } from './firebaseUtils';
 
 const App = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        ensureUserDocument(user.uid, user.email);
+        setUser(user);
+      } else {
+        setUser(null);
+      }
     });
     return () => unsubscribe();
   }, []);
