@@ -3,7 +3,8 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import Friends from './Friends';
-import { updateUserLocation } from './locationService';
+// import { updateUserLocation } from './locationService';
+import { updateUserLocation } from './firebaseUtils';
 
 const MainPage = ({ user }) => {
   const [position, setPosition] = useState(null);
