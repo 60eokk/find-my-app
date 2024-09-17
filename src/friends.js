@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { db } from './firebase';
 import { doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import { ensureUserDocument } from './firebaseUtils';
 
 const Friends = ({ user, onFriendLocationsUpdate }) => {
   const [friends, setFriends] = useState([]);
@@ -98,6 +99,7 @@ const Friends = ({ user, onFriendLocationsUpdate }) => {
       setError("User is not authenticated. Cannot add friends.");
       return;
     }
+    await ensureUserDocument(user.uid, user.email);
 
     if (!isOnline) {
       setError("Cannot add friends while offline. Please check your internet connection.");
