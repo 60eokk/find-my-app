@@ -3,6 +3,7 @@ import { auth, provider, db } from './firebase';
 import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import { ensureUserDocument } from './firebaseUtils';
 
 const SignUpPage = () => {
   const [email, setEmail] = useState('');
@@ -26,7 +27,7 @@ const SignUpPage = () => {
     e.preventDefault();
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await createUserDocument(userCredential.user);
+      await ensureUserDocument(userCredential.user.uid, email);
       navigate('/');
     } catch (error) {
       setError(error.message);
