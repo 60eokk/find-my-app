@@ -9,14 +9,31 @@ const MainPage = ({ user }) => {
   const [position, setPosition] = useState(null);
   const [friendLocations, setFriendLocations] = useState([]);
   const [geoError, setGeoError] = useState(null);
+  const [alerts, setAlerts] = useState([]);
   const MapboxToken = "pk.eyJ1IjoiNjBlb2trIiwiYSI6ImNseng0bHNpaDBvN3gyaW9sYTJrdGpjaHoifQ.7MEQ9mx2C8gXM2BQvCKOOg";
+
+  const checkProximityAlerts = useCallback((userPos, friends) => {
+    if (!userPos) return;
+    
+    const newAlerts = friends.filter(friend => {
+      if (friend.location && friend.alertDistance) {
+        const distance = calculateDistance(
+          userPos[0], userPos[1],
+          friend.location.latitude, friend.location.longitude
+        );
+        return distance <= friend.alertDistance;
+      }
+      return false;
+    });
+
+    setAlerts(newAlerts);
+  }, []);
 
   useEffect(() => {
     if (navigator.geolocation && user) {
       console.log("Geolocation is supported by this browser.");
       ensureUserDocument(user.uid, user.email);
       
-      // First, get the current position
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const lat = pos.coords.latitude;
@@ -24,6 +41,7 @@ const MainPage = ({ user }) => {
           console.log('Initial geolocation success:', lat, lng);
           setPosition([lat, lng]);
           updateUserLocation(user.uid, lat, lng);
+          checkProximityAlerts([lat, lng], friendLocations);
         },
         (error) => {
           console.error("Initial geolocation error:", error.message);
@@ -32,7 +50,6 @@ const MainPage = ({ user }) => {
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
 
-      // Then set up watching the position
       const watchId = navigator.geolocation.watchPosition(
         (pos) => {
           const lat = pos.coords.latitude;
@@ -41,6 +58,7 @@ const MainPage = ({ user }) => {
           setPosition([lat, lng]);
           updateUserLocation(user.uid, lat, lng);
           setGeoError(null);
+          checkProximityAlerts([lat, lng], friendLocations);
         },
         (error) => {
           console.error("Geolocation error:", error.message);
@@ -56,7 +74,24 @@ const MainPage = ({ user }) => {
       console.error("User is not authenticated.");
       setGeoError("Please sign in to use location features.");
     }
-  }, [user]);
+  }, [user, friendLocations, checkProximityAlerts]);
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const d = R * c; // Distance in km
+    return d;
+  };
+
+  const deg2rad = (deg) => {
+    return deg * (Math.PI/180);
+  };
 
   const customMarkerIcon = new L.Icon({
     iconUrl: require('./mapcursor.png'),
@@ -81,11 +116,28 @@ const MainPage = ({ user }) => {
   const handleFriendLocationsUpdate = useCallback((locations) => {
     console.log("Received friend locations update:", locations);
     setFriendLocations(locations);
-  }, []);
+    if (position) {
+      checkProximityAlerts(position, locations);
+    }
+  }, [position, checkProximityAlerts]);
 
   return (
     <div className="flex flex-col items-center justify-start min-h-screen p-5 bg-gray-100">
       <h1 className="text-4xl font-bold text-center mb-6 text-gray-800">Get Notified!!</h1>
+      
+      {alerts.length > 0 && (
+        <div className="w-full max-w-3xl mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+          <h2 className="font-bold mb-2">Proximity Alerts:</h2>
+          <ul>
+            {alerts.map((friend, index) => (
+              <li key={index}>
+                {friend.email} is within {friend.alertDistance} km of your location!
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      
       {geoError && (
         <div className="w-full max-w-3xl mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
           Error: {geoError}. Please check your device settings and try again.
