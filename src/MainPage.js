@@ -1,15 +1,33 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import Friends from './Friends';
 import { updateUserLocation, ensureUserDocument } from './firebaseUtils';
+
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const d = R * c; // Distance in km
+  return d;
+};
+
+const deg2rad = (deg) => {
+  return deg * (Math.PI/180);
+};
 
 const MainPage = ({ user }) => {
   const [position, setPosition] = useState(null);
   const [friendLocations, setFriendLocations] = useState([]);
   const [geoError, setGeoError] = useState(null);
   const [alerts, setAlerts] = useState([]);
+  const mapRef = useRef(null);
   const MapboxToken = "pk.eyJ1IjoiNjBlb2trIiwiYSI6ImNseng0bHNpaDBvN3gyaW9sYTJrdGpjaHoifQ.7MEQ9mx2C8gXM2BQvCKOOg";
 
   const checkProximityAlerts = useCallback((userPos, friends) => {
@@ -76,23 +94,6 @@ const MainPage = ({ user }) => {
     }
   }, [user, friendLocations, checkProximityAlerts]);
 
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Radius of the earth in km
-    const dLat = deg2rad(lat2 - lat1);
-    const dLon = deg2rad(lon2 - lon1);
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const d = R * c; // Distance in km
-    return d;
-  };
-
-  const deg2rad = (deg) => {
-    return deg * (Math.PI/180);
-  };
-
   const customMarkerIcon = new L.Icon({
     iconUrl: require('./mapcursor.png'),
     iconSize: [32, 32],
@@ -108,8 +109,8 @@ const MainPage = ({ user }) => {
   });
 
   const handleMeButtonClick = useCallback(() => {
-    if (position) {
-      setPosition([...position]);
+    if (position && mapRef.current) {
+      mapRef.current.setView(position, 13);
     }
   }, [position]);
 
@@ -145,7 +146,7 @@ const MainPage = ({ user }) => {
       )}
       <div className="w-full max-w-3xl h-96 border-2 border-gray-300 rounded-lg overflow-hidden mb-4">
         {position ? (
-          <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }}>
+          <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} ref={mapRef}>
             <TileLayer
               url={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MapboxToken}`}
               tileSize={512}
@@ -167,7 +168,6 @@ const MainPage = ({ user }) => {
                 </Marker>
               )
             )}
-            <MapResetButton position={position} />
           </MapContainer>
         ) : (
           <p className="text-center py-4">Loading map...</p>
@@ -182,16 +182,6 @@ const MainPage = ({ user }) => {
       <Friends user={user} onFriendLocationsUpdate={handleFriendLocationsUpdate} userLocation={position} />
     </div>
   );
-};
-
-const MapResetButton = ({ position }) => {
-  const map = useMap();
-  useEffect(() => {
-    if (position) {
-      map.setView(position, 13);
-    }
-  }, [map, position]);
-  return null;
 };
 
 export default MainPage;
