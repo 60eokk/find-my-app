@@ -3,37 +3,58 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import Friends from './Friends';
-// import { updateUserLocation } from './locationService';
-import { updateUserLocation } from './firebaseUtils';
+import { updateUserLocation, ensureUserDocument } from './firebaseUtils';
 
 const MainPage = ({ user }) => {
   const [position, setPosition] = useState(null);
   const [friendLocations, setFriendLocations] = useState([]);
+  const [geoError, setGeoError] = useState(null);
   const MapboxToken = "pk.eyJ1IjoiNjBlb2trIiwiYSI6ImNseng0bHNpaDBvN3gyaW9sYTJrdGpjaHoifQ.7MEQ9mx2C8gXM2BQvCKOOg";
 
   useEffect(() => {
-    if (navigator.geolocation) {
+    if (navigator.geolocation && user) {
       console.log("Geolocation is supported by this browser.");
+      ensureUserDocument(user.uid, user.email);
+      
+      // First, get the current position
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          console.log('Initial geolocation success:', lat, lng);
+          setPosition([lat, lng]);
+          updateUserLocation(user.uid, lat, lng);
+        },
+        (error) => {
+          console.error("Initial geolocation error:", error.message);
+          setGeoError(error.message);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+
+      // Then set up watching the position
       const watchId = navigator.geolocation.watchPosition(
         (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          console.log('Geolocation success:', lat, lng);
+          console.log('Geolocation update:', lat, lng);
           setPosition([lat, lng]);
-          if (user) {
-            updateUserLocation(user.uid, lat, lng);
-          }
+          updateUserLocation(user.uid, lat, lng);
+          setGeoError(null);
         },
         (error) => {
           console.error("Geolocation error:", error.message);
-          setPosition([50, 5]);
+          setGeoError(error.message);
         },
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+        { enableHighAccuracy: true, maximumAge: 30000, timeout: 27000 }
       );
       return () => navigator.geolocation.clearWatch(watchId);
-    } else {
+    } else if (!navigator.geolocation) {
       console.error("Geolocation is not supported by this browser.");
-      setPosition([50, 5]);
+      setGeoError("Geolocation is not supported by this browser.");
+    } else if (!user) {
+      console.error("User is not authenticated.");
+      setGeoError("Please sign in to use location features.");
     }
   }, [user]);
 
@@ -58,12 +79,18 @@ const MainPage = ({ user }) => {
   }, [position]);
 
   const handleFriendLocationsUpdate = useCallback((locations) => {
+    console.log("Received friend locations update:", locations);
     setFriendLocations(locations);
   }, []);
 
   return (
     <div className="flex flex-col items-center justify-start min-h-screen p-5 bg-gray-100">
       <h1 className="text-4xl font-bold text-center mb-6 text-gray-800">Get Notified!!</h1>
+      {geoError && (
+        <div className="w-full max-w-3xl mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          Error: {geoError}. Please check your device settings and try again.
+        </div>
+      )}
       <div className="w-full max-w-3xl h-96 border-2 border-gray-300 rounded-lg overflow-hidden mb-4">
         {position ? (
           <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }}>
@@ -96,7 +123,7 @@ const MainPage = ({ user }) => {
       </div>
       <button 
         onClick={handleMeButtonClick} 
-        className="px-6 py-2 text-lg font-semibold text-white bg-blue-500 rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
+        className="px-6 py-2 text-lg font-semibold text-white bg-blue-500 rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 mb-4"
       >
         ME!
       </button>
